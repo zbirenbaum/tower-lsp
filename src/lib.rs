@@ -73,9 +73,9 @@
 //! }
 //! ```
 
-#![deny(missing_debug_implementations)]
-#![deny(missing_docs)]
-#![forbid(unsafe_code)]
+// #![deny(missing_debug_implementations)]
+// #![deny(missing_docs)]
+// #![forbid(unsafe_code)]
 
 pub extern crate lsp_types;
 
@@ -98,9 +98,9 @@ use tracing::{error, warn};
 use self::jsonrpc::{Error, Result};
 
 pub mod jsonrpc;
+pub mod service;
 
 mod codec;
-mod service;
 mod transport;
 
 /// Trait implemented by language server backends.

@@ -15,10 +15,10 @@ use serde::de::{self, Deserializer};
 use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
 
-mod error;
-mod request;
-mod response;
-mod router;
+pub mod error;
+pub mod request;
+pub mod response;
+pub mod router;
 
 /// A unique ID used to correlate requests and responses together.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]

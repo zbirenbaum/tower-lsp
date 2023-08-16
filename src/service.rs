@@ -8,21 +8,22 @@ pub(crate) use self::state::{ServerState, State};
 use std::fmt::{self, Debug, Display, Formatter};
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use crate::jsonrpc::router::MethodHandler;
 
 use futures::future::{self, BoxFuture, FutureExt};
 use serde_json::Value;
 use tower::Service;
 
 use crate::jsonrpc::{
-    Error, ErrorCode, FromParams, IntoResponse, Method, Request, Response, Router,
+    Error, ErrorCode, FromParams, IntoResponse, Method, Request, Response, Router
 };
 use crate::LanguageServer;
 
 pub(crate) mod layers;
 
-mod client;
-mod pending;
-mod state;
+pub mod client;
+pub mod pending;
+pub mod state;
 
 /// Error that occurs when attempting to call the language server after it has already exited.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -63,14 +64,12 @@ impl<S: LanguageServer> LspService<S> {
     /// server-to-client communication.
     pub fn new<F>(init: F) -> (Self, ClientSocket)
     where
-        F: FnOnce(Client) -> S,
+      F: FnOnce(Client) -> S,
     {
-        LspService::build(init).finish()
+      LspService::build(init).finish()
     }
 
-    /// Starts building a new `LspService`.
-    ///
-    /// Returns an `LspServiceBuilder`, which allows adding custom JSON-RPC methods to the server.
+
     pub fn build<F>(init: F) -> LspServiceBuilder<S>
     where
         F: FnOnce(Client) -> S,
@@ -79,6 +78,30 @@ impl<S: LanguageServer> LspService<S> {
 
         let (client, socket) = Client::new(state.clone());
         let inner = Router::new(init(client.clone()));
+        let pending = Arc::new(Pending::new());
+
+        LspServiceBuilder {
+            inner: crate::generated::register_lsp_methods(
+                inner,
+                state.clone(),
+                pending.clone(),
+                client,
+            ),
+            state,
+            pending,
+            socket,
+        }
+    }
+    /// Starts building a new `LspService`.
+    ///
+    /// Returns an `LspServiceBuilder`, which allows adding custom JSON-RPC methods to the server.
+    pub fn build_mod_router<R>(router_init: R) -> LspServiceBuilder<S>
+    where
+        R: FnOnce(Client) -> Router<S, ExitedError>
+    {
+        let state = Arc::new(ServerState::new());
+        let (client, socket) = Client::new(state.clone());
+        let inner = router_init(client.clone());
         let pending = Arc::new(Pending::new());
 
         LspServiceBuilder {
@@ -139,10 +162,10 @@ impl<S: LanguageServer> Service<Request> for LspService<S> {
 ///
 /// To construct an `LspServiceBuilder`, refer to [`LspService::build`].
 pub struct LspServiceBuilder<S> {
-    inner: Router<S, ExitedError>,
-    state: Arc<ServerState>,
-    pending: Arc<Pending>,
-    socket: ClientSocket,
+    pub inner: Router<S, ExitedError>,
+    pub state: Arc<ServerState>,
+    pub pending: Arc<Pending>,
+    pub socket: ClientSocket,
 }
 
 impl<S: LanguageServer> LspServiceBuilder<S> {

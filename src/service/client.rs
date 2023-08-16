@@ -46,7 +46,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub(super) fn new(state: Arc<ServerState>) -> (Self, ClientSocket) {
+    pub fn new(state: Arc<ServerState>) -> (Self, ClientSocket) {
         let (tx, rx) = mpsc::channel(1);
         let pending = Arc::new(Pending::new());
 

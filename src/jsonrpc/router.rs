@@ -1,5 +1,4 @@
 //! Lightweight JSON-RPC router service.
-
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::fmt::{self, Debug, Formatter};
