@@ -97,6 +97,10 @@ fn gen_server_router(trait_name: &syn::Ident, methods: &[MethodCall]) -> proc_ma
             let layer = match &rpc_name[..] {
                 "initialize" => quote! { layers::Initialize::new(state.clone(), pending.clone()) },
                 "shutdown" => quote! { layers::Shutdown::new(state.clone(), pending.clone()) },
+                "getCompletionsCycling" => quote! {
+                  layers::Timeout(layers::Normal::new(state.clone(), pending.clone()), std::time::Duration::from_millis(1000))
+
+                },
                 _ => quote! { layers::Normal::new(state.clone(), pending.clone()) },
             };
 
